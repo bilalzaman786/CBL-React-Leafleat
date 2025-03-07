@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBL Analytics</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #8A2BE2, #4169E1);
+            --primary-color: #8A2BE2;
+            --secondary-color: #4169E1;
+            --background-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2d3748;
+            --text-muted: #718096;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --input-bg: #f1f5f9;
+            --border-color: #e2e8f0;
+            --hover-color: #9945FF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background-color);
+            min-height: 100vh;
+            padding: 24px;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .header {
+            width: 100%;
+            margin: 0 0 24px;
+            padding: 20px 32px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            max-width: 1920px;
+            margin: 0 auto 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-brand h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            width: 100%;
+            margin: 0;
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+            gap: 24px;
+            background: var(--card-bg);
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: var(--input-bg);
+            border-radius: 12px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+        input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.1);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            letter-spacing: 0.025em;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(138, 43, 226, 0.15);
+        }
+
+        .btn-secondary {
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .map-container {
+            width: 100%;
+            height: calc(100vh - 150px);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            flex: 1;
+            z-index: 1;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .map-controls .btn {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .stats-card {
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .stats-card h3, .filter-box h4 {
+            margin-bottom: 15px;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+        .filter-box {
+            padding: 15px;
+            border-left: 4px solid;
+            border-image: var(--primary-gradient) 1;
+            margin-bottom: 15px;
+            background: var(--input-bg);
+            border-radius: 8px;
+        }
+
+        .filter-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            z-index: 1000;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .filter-select, .filter-input {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-size: 0.9rem;
+            min-width: 150px;
+        }
+
+        .filter-input {
+            width: 200px;
+        }
+
+        .filter-select:hover, .filter-input:hover {
+            border-color: var(--primary-color);
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .map-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-brand">
+            <h1>CBL Analytics</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn">Export</button>
+            <button class="btn btn-secondary">Settings</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="map-container">
+            <div class="map-controls">
+                <button class="btn btn-secondary" id="resetMap">Reset View</button>
+                <button class="btn" id="loadCensus">Potential Retailers</button>
+                <button class="btn" id="loadNewShops">Current Retailers</button>
+            </div>
+            <div id="map"></div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <input type="text" id="region" class="filter-input" placeholder="Enter Region">
+                    <input type="text" id="city" class="filter-input" placeholder="Enter City">
+                    <input type="text" id="store" class="filter-input" placeholder="Search Store">
+                </div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="stats-card">
+                <h3>Analytics Overview</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span>Total Stores</span>
+                        <span>78</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Active Regions</span>
+                        <span>5</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Total Coverage</span>
+                        <span>85%</span>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="filter-section">
+                <div class="filter-box">
+                    <h4>Store Performance</h4>
+                    <p>Filter by store metrics and KPIs</p>
+                </div>
+                <div class="filter-box">
+                    <h4>Customer Insights</h4>
+                    <p>Filter by customer behavior and demographics</p>
+                </div>
+                <div class="filter-box">
+                    <h4>Inventory Status</h4>
+                    <p>Filter by stock levels and product categories</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var map = L.map('map', {
+                center: [30.3753, 69.3451],
+                zoom: 6,
+                scrollWheelZoom: true
+            });
+        
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+        
+            const storeData = [
+                // Census Shops (Original Stores)
+                {"name":"Sibi Premium Store", "state":"Balochistan", "city":"Sibi", "coords":[29.5448, 67.8806], "type":"census"},
+                // Additional 200 stores
+                {"name":"Karachi Central Hub", "state":"Sindh", "city":"Karachi", "coords":[24.8822, 67.0311], "type":"new"},
+                {"name":"Lahore Gateway Center", "state":"Punjab", "city":"Lahore", "coords":[31.5084, 74.3387], "type":"new"},
+                {"name":"Islamabad Prime", "state":"Punjab", "city":"Islamabad", "coords":[33.6844, 73.0479], "type":"new"},
+                {"name":"Peshawar Valley Store", "state":"Khyber Pakhtunkhwa", "city":"Peshawar", "coords":[34.0151, 71.5249], "type":"new"},
+                {"name":"Quetta Central", "state":"Balochistan", "city":"Quetta", "coords":[30.1798, 66.9750], "type":"new"},
+                {"name":"Multan City Center", "state":"Punjab", "city":"Multan", "coords":[30.1575, 71.5249], "type":"new"},
+                {"name":"Hyderabad Plaza", "state":"Sindh", "city":"Hyderabad", "coords":[25.3960, 68.3737], "type":"new"},
+                {"name":"Rawalpindi Express", "state":"Punjab", "city":"Rawalpindi", "coords":[33.6007, 73.0679], "type":"new"},
+                {"name":"Gujranwala Center", "state":"Punjab", "city":"Gujranwala", "coords":[32.1877, 74.1945], "type":"new"},
+                {"name":"Bahawalpur Mall", "state":"Punjab", "city":"Bahawalpur", "coords":[29.3956, 71.6722], "type":"new"},
+                {"name":"Sukkur Plaza", "state":"Sindh", "city":"Sukkur", "coords":[27.7052, 68.8570], "type":"new"},
+                {"name":"Abbottabad Heights", "state":"Khyber Pakhtunkhwa", "city":"Abbottabad", "coords":[34.1688, 73.2215], "type":"new"},
+                {"name":"Larkana Square", "state":"Sindh", "city":"Larkana", "coords":[27.5598, 68.2264], "type":"new"},
+                {"name":"Mardan Center", "state":"Khyber Pakhtunkhwa", "city":"Mardan", "coords":[34.1979, 72.0468], "type":"new"},
+                {"name":"Kasur Gateway", "state":"Punjab", "city":"Kasur", "coords":[31.1187, 74.4502], "type":"new"},
+                {"name":"Rahim Yar Khan Plaza", "state":"Punjab", "city":"Rahim Yar Khan", "coords":[28.4202, 70.2952], "type":"new"},
+                {"name":"Sahiwal Center", "state":"Punjab", "city":"Sahiwal", "coords":[30.6611, 73.1086], "type":"new"},
+                {"name":"Okara Mall", "state":"Punjab", "city":"Okara", "coords":[30.8090, 73.4474], "type":"new"},
+                {"name":"Mingora Express", "state":"Khyber Pakhtunkhwa", "city":"Mingora", "coords":[34.7717, 72.3600], "type":"new"},
+                {"name":"Jacobabad Center", "state":"Sindh", "city":"Jacobabad", "coords":[28.2826, 68.4377], "type":"new"},
+                {"name":"Sadiqabad Plaza", "state":"Punjab", "city":"Sadiqabad", "coords":[28.3091, 70.1307], "type":"new"},
+                {"name":"Kohat Square", "state":"Khyber Pakhtunkhwa", "city":"Kohat", "coords":[33.5889, 71.4429], "type":"new"},
+                {"name":"Khanewal Center", "state":"Punjab", "city":"Khanewal", "coords":[30.3017, 71.9321], "type":"new"},
+                {"name":"Chiniot Plaza", "state":"Punjab", "city":"Chiniot", "coords":[31.7167, 72.9833], "type":"new"},
+                {"name":"Mirpur Khas Center", "state":"Sindh", "city":"Mirpur Khas", "coords":[25.5276, 69.0159], "type":"new"},
+                {"name":"Bannu Square", "state":"Khyber Pakhtunkhwa", "city":"Bannu", "coords":[32.9889, 70.6056], "type":"new"},
+                {"name":"Parachinar Mall", "state":"Khyber Pakhtunkhwa", "city":"Parachinar", "coords":[33.8992, 70.1008], "type":"new"},
+                {"name":"Timergara Center", "state":"Khyber Pakhtunkhwa", "city":"Timergara", "coords":[34.8281, 71.8408], "type":"new"},
+                {"name":"Umarkot Plaza", "state":"Sindh", "city":"Umarkot", "coords":[25.3614, 69.7361], "type":"new"},
+                {"name":"Hangu Square", "state":"Khyber Pakhtunkhwa", "city":"Hangu", "coords":[33.5281, 71.0572], "type":"new"},
+                {"name":"Charsadda Center", "state":"Khyber Pakhtunkhwa", "city":"Charsadda", "coords":[34.1453, 71.7308], "type":"new"},
+                {"name":"Kashmor Plaza", "state":"Sindh", "city":"Kashmor", "coords":[28.4326, 69.5836], "type":"new"},
+                {"name":"Tank Square", "state":"Khyber Pakhtunkhwa", "city":"Tank", "coords":[32.2167, 70.3833], "type":"new"},
+                {"name":"Shikarpur Center", "state":"Sindh", "city":"Shikarpur", "coords":[27.9556, 68.6382], "type":"new"},
+                {"name":"Lodhran Plaza", "state":"Punjab", "city":"Lodhran", "coords":[29.5339, 71.6333], "type":"new"},
+                {"name":"Batkhela Square", "state":"Khyber Pakhtunkhwa", "city":"Batkhela", "coords":[34.6167, 71.9667], "type":"new"},
+                {"name":"Shahdadkot Center", "state":"Sindh", "city":"Shahdadkot", "coords":[27.8474, 67.9067], "type":"new"},
+                {"name":"Khairpur Plaza", "state":"Sindh", "city":"Khairpur", "coords":[27.5295, 68.7592], "type":"new"},
+                {"name":"Nowshera Valley", "state":"Khyber Pakhtunkhwa", "city":"Nowshera", "coords":[34.0152, 71.9747], "type":"new"},
+                {"name":"Dadu Center", "state":"Sindh", "city":"Dadu", "coords":[26.7319, 67.7750], "type":"new"},
+                {"name":"Mansehra Square", "state":"Khyber Pakhtunkhwa", "city":"Mansehra", "coords":[34.3333, 73.2000], "type":"new"},
+                {"name":"Tando Allahyar Plaza", "state":"Sindh", "city":"Tando Allahyar", "coords":[25.4667, 68.7167], "type":"new"},
+                {"name":"Dera Ismail Khan Center", "state":"Khyber Pakhtunkhwa", "city":"Dera Ismail Khan", "coords":[31.8314, 70.9019], "type":"new"},
+                {"name":"Sanghar Square", "state":"Sindh", "city":"Sanghar", "coords":[26.0436, 68.9481], "type":"new"},
+                {"name":"Swabi Plaza", "state":"Khyber Pakhtunkhwa", "city":"Swabi", "coords":[34.1167, 72.4667], "type":"new"},
+                {"name":"Narowal Center", "state":"Punjab", "city":"Narowal", "coords":[32.1019, 74.8731], "type":"new"},
+                {"name":"Kharan Square", "state":"Balochistan", "city":"Kharan", "coords":[28.5833, 65.4167], "type":"new"},
+                {"name":"Chaman Plaza", "state":"Balochistan", "city":"Chaman", "coords":[30.9210, 66.4597], "type":"new"},
+                {"name":"Pishin Center", "state":"Balochistan", "city":"Pishin", "coords":[30.5833, 67.0000], "type":"new"},
+                {"name":"Nushki Square", "state":"Balochistan", "city":"Nushki", "coords":[29.5500, 66.0167], "type":"new"},
+                {"name":"Kalat Plaza", "state":"Balochistan", "city":"Kalat", "coords":[29.0267, 66.5900], "type":"new"},
+                {"name":"Mastung Center", "state":"Balochistan", "city":"Mastung", "coords":[29.7997, 66.8455], "type":"new"},
+                {"name":"Zhob Square", "state":"Balochistan", "city":"Zhob", "coords":[31.3417, 69.4493], "type":"new"},
+                {"name":"Loralai Plaza", "state":"Balochistan", "city":"Loralai", "coords":[30.3705, 68.5979], "type":"new"},
+                {"name":"Khuzdar Center", "state":"Balochistan", "city":"Khuzdar", "coords":[27.8120, 66.6165], "type":"new"},
+                {"name":"Dera Murad Jamali Square", "state":"Balochistan", "city":"Dera Murad Jamali", "coords":[28.5466, 68.2232], "type":"new"},
+                {"name":"Turbat Plaza", "state":"Balochistan", "city":"Turbat", "coords":[26.0031, 63.0544], "type":"new"},
+                {"name":"Gwadar Center", "state":"Balochistan", "city":"Gwadar", "coords":[25.1216, 62.3224], "type":"new"},
+                {"name":"Dera Bugti Square", "state":"Balochistan", "city":"Dera Bugti", "coords":[29.0362, 69.1585], "type":"new"},
+                {"name":"Kohlu Plaza", "state":"Balochistan", "city":"Kohlu", "coords":[29.8965, 69.2532], "type":"new"},
+                {"name":"Sibi Center", "state":"Balochistan", "city":"Sibi", "coords":[29.5430, 67.8773], "type":"new"},
+                {"name":"Dera Allah Yar Square", "state":"Balochistan", "city":"Dera Allah Yar", "coords":[28.3987, 68.3649], "type":"new"},
+                {"name":"Chitral Plaza", "state":"Khyber Pakhtunkhwa", "city":"Chitral", "coords":[35.8511, 71.7843], "type":"new"},
+                {"name":"Dir Center", "state":"Khyber Pakhtunkhwa", "city":"Dir", "coords":[35.2074, 71.8768], "type":"new"},
+                {"name":"Swat Square", "state":"Khyber Pakhtunkhwa", "city":"Mingora", "coords":[34.7717, 72.3600], "type":"new"},
+                {"name":"Buner Plaza", "state":"Khyber Pakhtunkhwa", "city":"Daggar", "coords":[34.5023, 72.4898], "type":"new"},
+                {"name":"Shangla Center", "state":"Khyber Pakhtunkhwa", "city":"Alpuri", "coords":[34.8722, 72.6361], "type":"new"},
+                {"name":"Lasbela Premium Store", "state":"Balochistan", "city":"Lasbela", "coords":[25.581, 66.5843], "type":"census"},
+                {"name":"Quetta Premium Store", "state":"Balochistan", "city":"Quetta", "coords":[30.1798, 66.9750], "type":"census"},
+                {"name":"Gwadar Premium Store", "state":"Balochistan", "city":"Gwadar", "coords":[25.1216, 62.3224], "type":"census"},
+                {"name":"Karachi Premium Store", "state":"Sindh", "city":"Karachi", "coords":[24.8607, 67.0011], "type":"census"},
+                {"name":"Hyderabad Premium Store", "state":"Sindh", "city":"Hyderabad", "coords":[25.396, 68.3737], "type":"census"},
+                {"name":"Sukkur Premium Store", "state":"Sindh", "city":"Sukkur", "coords":[27.7052, 68.8570], "type":"census"},
+                {"name":"Larkana Premium Store", "state":"Sindh", "city":"Larkana", "coords":[27.5598, 68.2264], "type":"census"},
+                {"name":"Lahore Premium Store", "state":"Punjab", "city":"Lahore", "coords":[31.5204, 74.3587], "type":"census"},
+                {"name":"Rawalpindi Premium Store", "state":"Punjab", "city":"Rawalpindi", "coords":[33.5651, 73.0169], "type":"census"},
+                {"name":"Faisalabad Premium Store", "state":"Punjab", "city":"Faisalabad", "coords":[31.4504, 73.1350], "type":"census"},
+                {"name":"Multan Premium Store", "state":"Punjab", "city":"Multan", "coords":[30.1575, 71.5249], "type":"census"},
+                {"name":"Gujranwala Premium Store", "state":"Punjab", "city":"Gujranwala", "coords":[32.1877, 74.1945], "type":"census"},
+                {"name":"Peshawar Premium Store", "state":"Khyber Pakhtunkhwa", "city":"Peshawar", "coords":[34.0151, 71.5249], "type":"census"},
+                {"name":"Mardan Premium Store", "state":"Khyber Pakhtunkhwa", "city":"Mardan", "coords":[34.1979, 72.0468], "type":"census"},
+                {"name":"Abbottabad Premium Store", "state":"Khyber Pakhtunkhwa", "city":"Abbottabad", "coords":[34.1688, 73.2215], "type":"census"},
+                {"name":"Swat Premium Store", "state":"Khyber Pakhtunkhwa", "city":"Mingora", "coords":[34.7717, 72.3600], "type":"census"},
+                {"name":"Gilgit Premium Store", "state":"Gilgit-Baltistan", "city":"Gilgit", "coords":[35.8818, 74.4645], "type":"census"},
+                {"name":"Hunza Premium Store", "state":"Gilgit-Baltistan", "city":"Hunza", "coords":[36.3166, 74.6505], "type":"census"},
+                {"name":"Skardu Premium Store", "state":"Gilgit-Baltistan", "city":"Skardu", "coords":[35.2927, 75.6371], "type":"census"},
+                
+                // New Shops
+                {"name":"Zhob Express Store", "state":"Balochistan", "city":"Zhob", "coords":[31.3417, 69.4493], "type":"new"},
+                {"name":"Khuzdar Mart", "state":"Balochistan", "city":"Khuzdar", "coords":[27.8120, 66.6165], "type":"new"},
+                {"name":"Turbat Shopping Center", "state":"Balochistan", "city":"Turbat", "coords":[26.0031, 63.0544], "type":"new"},
+                {"name":"Korangi Store", "state":"Sindh", "city":"Karachi", "coords":[24.8937, 67.1151], "type":"new"},
+                {"name":"Gulshan Outlet", "state":"Sindh", "city":"Karachi", "coords":[24.9204, 67.0781], "type":"new"},
+                {"name":"Mirpurkhas Store", "state":"Sindh", "city":"Mirpurkhas", "coords":[25.5276, 69.0159], "type":"new"},
+                {"name":"Nawabshah Center", "state":"Sindh", "city":"Nawabshah", "coords":[26.2442, 68.4100], "type":"new"},
+                {"name":"DHA Lahore Store", "state":"Punjab", "city":"Lahore", "coords":[31.4797, 74.4482], "type":"new"},
+                {"name":"Johar Town Mart", "state":"Punjab", "city":"Lahore", "coords":[31.4697, 74.2728], "type":"new"},
+                {"name":"Bahria Town Store", "state":"Punjab", "city":"Rawalpindi", "coords":[33.5651, 73.1545], "type":"new"},
+                {"name":"Sargodha Express", "state":"Punjab", "city":"Sargodha", "coords":[32.0740, 72.6861], "type":"new"},
+                {"name":"Bahawalpur Center", "state":"Punjab", "city":"Bahawalpur", "coords":[29.3956, 71.6722], "type":"new"},
+                {"name":"Hayatabad Store", "state":"Khyber Pakhtunkhwa", "city":"Peshawar", "coords":[33.9889, 71.4429], "type":"new"},
+                {"name":"Nowshera Mart", "state":"Khyber Pakhtunkhwa", "city":"Nowshera", "coords":[34.0152, 71.9747], "type":"new"},
+                {"name":"Mansehra Center", "state":"Khyber Pakhtunkhwa", "city":"Mansehra", "coords":[34.3333, 73.2000], "type":"new"},
+                {"name":"Dir Store", "state":"Khyber Pakhtunkhwa", "city":"Dir", "coords":[35.2074, 71.8768], "type":"new"},
+                {"name":"Chitral Express", "state":"Khyber Pakhtunkhwa", "city":"Chitral", "coords":[35.8511, 71.7843], "type":"new"},
+                {"name":"Ghizer Valley Store", "state":"Gilgit-Baltistan", "city":"Ghizer", "coords":[36.3095, 73.8491], "type":"new"},
+                {"name":"Astore Mart", "state":"Gilgit-Baltistan", "city":"Astore", "coords":[35.3666, 74.8569], "type":"new"},
+                {"name":"Shigar Valley Center", "state":"Gilgit-Baltistan", "city":"Shigar", "coords":[35.4254, 75.7506], "type":"new"}
+            ];
+
+            const markerColors = {
+                census: '#0000FF',  // Blue for census shops
+                new: '#FF0000'      // Red for new shops
+            };
+
+            // Function to get marker color based on store type
+            function getMarkerColor(type) {
+                return markerColors[type] || '#FF0000';
+            }
+
+            let currentFilter = 'all';  // Track current filter state
+
+            const regionColors = {
+                'Balochistan': '#8A2BE2',
+                'Sindh': '#4169E1',
+                'Punjab': '#9945FF',
+                'Khyber Pakhtunkhwa': '#6F5DE0',
+                'Gilgit-Baltistan': '#5D7CE0'
+            };
+
+            const cityColors = {
+                'Karachi': '#FF4136',
+                'Lahore': '#FF851B',
+                'Islamabad': '#FFDC00',
+                'Peshawar': '#2ECC40',
+                'Quetta': '#0074D9',
+                'Multan': '#B10DC9',
+                'Hyderabad': '#01FF70',
+                'Faisalabad': '#7FDBFF',
+                'Rawalpindi': '#F012BE',
+                'Gujranwala': '#39CCCC'
+            };
+
+            let cityHighlight = null;
+
+            let markers = [];
+
+            function addMarkers(stores) {
+                // Clear existing markers
+                markers.forEach(marker => marker.remove());
+                markers = [];
+
+                stores.forEach(store => {
+                    const markerIcon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div style="width: 6px; height: 6px; border-radius: 50%; background-color: ${store.type === 'census' ? '#0000FF' : '#FF0000'}; border: 1px solid #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.3); opacity: 0.85;"></div>`,
+                        iconSize: [6, 6],
+                        iconAnchor: [3, 3]
+                    });
+
+                    const marker = L.marker(store.coords, { icon: markerIcon })
+                        .bindPopup(`<b>${store.name}</b><br>${store.city}, ${store.state}`);
+                    
+                    marker.addTo(map);
+                    markers.push(marker);
+                });
+            }
+
+            // Initial load of markers
+            addMarkers(storeData);
+
+            // Filter functionality
+            const regionInput = document.getElementById('region');
+            const cityInput = document.getElementById('city');
+            const storeInput = document.getElementById('store');
+
+            // Populate region dropdown with unique values
+            function populateRegions() {
+                const regions = [...new Set(storeData.map(store => store.state))];
+                regions.sort();
+                const regionSelect = document.getElementById('region');
+                regionSelect.innerHTML = '<option value="">Select region</option>';
+                regions.forEach(region => {
+                    regionSelect.innerHTML += `<option value="${region}">${region}</option>`;
+                });
+            }
+
+            // Populate city dropdown based on selected region
+            function populateCities(selectedRegion) {
+                const cities = [...new Set(storeData
+                    .filter(store => !selectedRegion || store.state === selectedRegion)
+                    .map(store => store.city))];
+                cities.sort();
+                const citySelect = document.getElementById('city');
+                citySelect.innerHTML = '<option value="">Select city</option>';
+                cities.forEach(city => {
+                    citySelect.innerHTML += `<option value="${city}">${city}</option>`;
+                });
+            }
+
+            // Initial population of dropdowns
+            populateRegions();
+            populateCities();
+
+            function filterStores() {
+                const regionFilter = regionInput.value;
+                const cityFilter = cityInput.value;
+                const storeFilter = storeInput.value.toLowerCase();
+
+                // Reset map view if all filters are cleared
+                if (!regionFilter && !cityFilter && !storeFilter) {
+                    map.setView([30.3753, 69.3451], 6);
+                }
+
+                const filteredStores = storeData.filter(store => {
+                    return (!regionFilter || store.state === regionFilter) &&
+                           (!cityFilter || store.city === cityFilter) &&
+                           (!storeFilter || store.name.toLowerCase().includes(storeFilter));
+                });
+
+                addMarkers(filteredStores);
+
+                // Remove existing city highlight
+                if (cityHighlight) {
+                    cityHighlight.remove();
+                    cityHighlight = null;
+                }
+
+                // Add highlight for selected city
+                if (cityFilter) {
+                    const cityStores = storeData.filter(store => store.city === cityFilter);
+                    if (cityStores.length > 0) {
+                        const cityCenter = cityStores[0].coords;
+                        const cityColor = cityColors[cityFilter] || '#FF4136';
+                        cityHighlight = L.circle(cityCenter, {
+                            radius: 15000, // 15km radius
+                            color: cityColor,
+                            fillColor: cityColor,
+                            fillOpacity: 0.2,
+                            weight: 1
+                        }).addTo(map);
+                    }
+                }
+            }
+
+            // Add event listeners for filters
+            regionInput.addEventListener('change', (e) => {
+                populateCities(e.target.value);
+                filterStores();
+            });
+            cityInput.addEventListener('change', filterStores);
+            storeInput.addEventListener('input', filterStores);
+
+            // Map control buttons functionality
+            document.getElementById('resetMap').addEventListener('click', () => {
+                map.setView([30.3753, 69.3451], 6);
+            });
+
+            document.getElementById('loadCensus').addEventListener('click', () => {
+                const censusShops = storeData.filter(store => store.type === 'census');
+                addMarkers(censusShops);
+                currentFilter = 'census';
+            });
+
+            document.getElementById('loadNewShops').addEventListener('click', () => {
+                const newShops = storeData.filter(store => store.type === 'new');
+                addMarkers(newShops);
+                currentFilter = 'new';
+            });
+
+            document.getElementById('resetMap').addEventListener('click', () => {
+                map.setView([30.3753, 69.3451], 6);
+                addMarkers(storeData);
+                currentFilter = 'all';
+            });
+        });
+    </script>
+</body>
+</html>
